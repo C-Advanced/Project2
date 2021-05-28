@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "dllist.h"
-#include "jrb.h"
+#include "libfdr/dllist.h"
+#include "libfdr/jrb.h"
 #define INFINITIVE 10000000
 #define END -9999
 #define POS_SIZE 60
@@ -16,15 +16,15 @@ typedef struct
 
 typedef struct
 {
-    char line[10][10];
-    int n_line;
-    char k[POS_SIZE];
-    char p[POS_SIZE];
-    double d;
-    int t;
+    char line[10][10]; //lưu các tuyến bus để đến đỉnh này
+    int n_line;        //số các tuyến bus để đi đến đỉnh này (vì có thể có nhiều chuyến)
+    char k[POS_SIZE];  //tên đỉnh
+    char p[POS_SIZE];  //đỉnh cha                       |
+    double d;          //trọng số đường đi             |   Dung cho dijiktra
+    int t;             //đã thăm hay chưa(0: chưa thăm)|
 } vtx;
 
-typedef struct
+typedef struct         //lưu thông tin hành trình từ <begin> đến <end> có <n_line> tuyến bus được lưu trong <line[i]> 
 {
     char line[10][10];
     int n_line;
@@ -48,33 +48,8 @@ void addVertex(Graph graph, char *name)
     return;
 }
 
-// char *getVertex(Graph graph, int id)
-// {
-//     JRB find;
-//     find = jrb_find_str(graph.vertices, id);
-//     if (find == NULL)
-//         return NULL;
-//     else
-//         return jval_s(find->val);
-// }
 
-// void addEdge(Graph g, char* pos1, char* pos2, double weight)
-// {
-//     JRB Node = jrb_find_str(g.edges, pos1);
-//     JRB tree;
-//     if (Node == NULL)
-//     {
-//         tree = make_jrb();
-//         jrb_insert_str(g.edges, pos1, new_jval_v(tree));
-//     }
-//     else
-//     {
-//         tree = (JRB)jval_v(Node->val);
-//     }
-//     jrb_insert_str(tree, pos2, new_jval_d(weight));
-// }
-
-int strcmp_Ncasesen(char *s1, char *s2)
+int strcmp_Ncasesen(char *s1, char *s2) //strcmp không phân biệt chữ hoa
 {
     int len1 = strlen(s1), len2 = strlen(s2), i;
     if (len1 != len2)
@@ -85,18 +60,18 @@ int strcmp_Ncasesen(char *s1, char *s2)
     return 0;
 }
 
-void addEdge(Graph g, char *pos1, char *pos2, char *lineval)
+void addEdge(Graph g, char *pos1, char *pos2, char *lineval)  //pos1, 2: đỉnh 1, 2; lineval: tên chuyến bus có thể đi từ <pos1> -> <pos2>
 {
     JRB ptr;
-    JRB Node = jrb_find_str(g.edges, pos1);
+    JRB Node = jrb_find_str(g.edges, pos1);                  //cây edge lưu key là các đỉnh, val là jrb (Tạm gọi jrb_edge_val)
     JRB tree, line;
     int i = 0;
     if (Node == NULL)
     {
-        tree = make_jrb();
-        line = make_jrb();
-        jrb_insert_str(line, strdup(lineval), new_jval_i(1));
-        jrb_insert_str(tree, strdup(pos2), new_jval_v(line));
+        tree = make_jrb();                                   //tree là jrb_edge_val, có key là tên đỉnh kề, val là jrb (tạm gọi jrb_edge_val_val)
+        line = make_jrb();					//line là jrb_edge_val_val tức node->val của tree
+        jrb_insert_str(line, strdup(lineval), new_jval_i(1));  //insert tên chuyến, độ dài măc định là 1
+        jrb_insert_str(tree, strdup(pos2), new_jval_v(line));  
         jrb_insert_str(g.edges, strdup(pos1), new_jval_v(tree));
         return;
     }
@@ -116,7 +91,7 @@ void addEdge(Graph g, char *pos1, char *pos2, char *lineval)
     jrb_insert_str(line, strdup(lineval), new_jval_i(1));
 }
 
-int hasEdge(Graph graph, char *pos1, char *pos2)
+int hasEdge(Graph graph, char *pos1, char *pos2) //kiểm tra cạnh nối 2 đỉnh
 {
     JRB find = jrb_find_str(graph.edges, pos1);
     if (find == NULL)
@@ -126,6 +101,7 @@ int hasEdge(Graph graph, char *pos1, char *pos2)
     return 0;
 }
 
+//lấy giá trị của cạnh
 double getEdgeValue(Graph graph, char *pos1, char *pos2)
 {
     JRB find = jrb_find_str(graph.edges, pos1), edge;
@@ -156,94 +132,8 @@ int outdegree(Graph graph, char *v, char *output)
     return count;
 }
 
-// int *indegree(Graph graph, int v, int *count)
-// {
-//     *count = 0;
-//     int *output = malloc(sizeof(int));
-//     JRB ptr;
-//     jrb_traverse(ptr, graph.edges)
-//     {
-//         if (jrb_find_str(jval_v(ptr->val), v) != NULL)
-//         {
-//             output[*count] = jval_i(ptr->val);
-//             (*count)++;
-//             output = realloc(output, ((*count) + 1) * sizeof(int));
-//         }
-//     }
-// }
-
-// int DAG(Graph graph)
-// {
-//     int visited[1000];
-//     int n, output[100], i, u, v, start;
-//     Dllist node, stack;
-//     JRB vertex;
-
-//     jrb_traverse(vertex, graph.vertices)
-//     {
-//         memset(visited, 0, sizeof(visited));
-
-//         start = jval_i(vertex->key);
-//         stack = new_dllist();
-//         dll_append(stack, new_jval_i(start));
-
-//         while (!dll_empty(stack))
-//         {
-//             node = dll_last(stack);
-//             u = jval_i(node->val);
-//             dll_delete_node(node);
-//             if (!visited[u])
-//             {
-//                 visited[u] = 1;
-//                 n = outdegree(graph, u, output);
-//                 for (i = 0; i < n; i++)
-//                 {
-//                     v = output[i];
-//                     if (v == start) // cycle detected
-//                         return 0;
-//                     if (!visited[v])
-//                         dll_append(stack, new_jval_i(v));
-//                 }
-//             }
-//         }
-//     }
-//     return 1; // no cycle
-// }
-
-// void TSort(Graph graph)
-// {
-//     Dllist queue, node;
-//     JRB ptr;
-//     int n = 0, *indeg, count = 0, v, *output, i, j;
-//     indeg = malloc(sizeof(int));
-//     jrb_traverse(ptr, graph.vertices)
-//     {
-//         indeg = calloc(indeg, (n + 1) * sizeof(int));
-//         indegree(graph, jval_i(ptr->key), &count);
-//         indeg[n] = count;
-//         if (count == 0)
-//             dll_append(queue, ptr->key);
-//         n++;
-//     }
-//     while (!dll_empty(queue))
-//     {
-//         node = dll_first(queue);
-//         v = jval_i(node->val);
-//         dll_delete_node(node);
-//         printf("%d\t", v);
-//         output = outdegree(graph, v, &count);
-//         for (i = 0; i < count; ++i)
-//             for (j = 0; j < n; ++j)
-//                 if (indeg[j] == output[i])
-//                 {
-//                     indeg[j]--;
-//                     if (indeg[j] == 0)
-//                         dll_append(queue, new_jval_i(j));
-//                 }
-//     }
-// }
-
-int findVtx(vtx *v, int n, char *key)
+//hàm tìm chỉ số đỉnh <key> trong mảng vertex[]
+int findVtx(vtx *v, int n, char *key)          //n: số đỉnh
 {
     int i;
     for (i = 0; i < n; ++i)
@@ -251,6 +141,8 @@ int findVtx(vtx *v, int n, char *key)
             return i;
 }
 
+//hàm tìm đỉnh có giá trị đường đi nhỏ nhất trong mảng vertex[]
+//(dùng cho dijiktra, tương tự queue)
 int findMin(vtx *v, int n)
 {
     int i, result = END;
@@ -264,29 +156,34 @@ int findMin(vtx *v, int n)
     return result;
 }
 
-int Route(vtx *v, int min, int hdl, JRB lineTree, vtx *tmp)
+//hàm kiểm tra có phải chuyển bus khi đi từ v[min] đến đỉnh kế tiếp không
+//đọc hàm dưới để hiểu hơn
+int Route(vtx *v, int min, JRB lineTree, vtx *tmp)            //lineTree lưu tất cả tuyến bus từ v[min] -> đỉnh kế tiếp
 {
     int i, result = 0;
     tmp->n_line = 0;
     JRB find;
-    for (i = 0; i < v[min].n_line; ++i)
+    for (i = 0; i < v[min].n_line; ++i)                                //duyệt tất cả tuyến bus dùng để đến v[min]
         if ((find = jrb_find_str(lineTree, v[min].line[i])) != NULL)
         {
-            strcpy(tmp->line[tmp->n_line++], jval_s(find->key));
+            strcpy(tmp->line[tmp->n_line++], jval_s(find->key));       //nếu có tuyến bus đi qua v[min] và qua cả đỉnh kế tiếp thì dùng tuyến đó để đi tiếp
             result = 1;
         }
-    if (!result)
+    if (!result)                                                      //các tuyến bus qua v[min] không qua đỉnh kế (bắt buộc chuyển bus)
         jrb_traverse(find, lineTree)
             strcpy(tmp->line[tmp->n_line++], jval_s(find->key));
     return result;
 }
 
+//dijiktra
 double shortestPath(Graph graph, char *s, char *t, char *path, int *length, Guide *guide, int *changeBus)
 {
     vtx *v = malloc(sizeof(vtx)), tmp;
     JRB trv, fnd;
     int count = 0, i, hdl, min, nadj, wgt, j, parent;
     char adj[200][POS_SIZE], line[10];
+    
+    //khởi tạo mảng vtx
     jrb_traverse(trv, graph.vertices)
     {
         v = realloc(v, (count + 1) * sizeof(vtx));
@@ -295,28 +192,27 @@ double shortestPath(Graph graph, char *s, char *t, char *path, int *length, Guid
         v[count].n_line = 0;
         v[count++].t = 0;
     }
-    i = findVtx(v, count, s);
-    // for (i = 0; i < count; ++i)
-    //     if (v[i].k == s)
-    //     {
+    
+    i = findVtx(v, count, s); //tìm chỉ số đỉnh <s> trong vtx[]
     v[i].d = 0;
     v[i].t = 1;
-    // }
+    
     nadj = outdegree(graph, s, &adj[0][0]);
     for (i = 0; i < nadj; ++i)
     {
-        hdl = findVtx(v, count, adj[i]);
+        hdl = findVtx(v, count, adj[i]);                        //hdl: handle - chỉ số đỉnh đang thao tác
         trv = jval_v((jrb_find_str(graph.edges, s)->val));
         fnd = jrb_find_str(trv, adj[i]);
         strcpy(v[hdl].p, s);
-        fnd = (JRB)jval_v(fnd->val);
+        fnd = (JRB)jval_v(fnd->val);                            //fnd: jrb_edge_val_val
         jrb_traverse(trv, fnd)
-            strcpy(v[hdl].line[v[hdl].n_line++], jval_s(trv->key));
-        v[hdl].d = jval_d(jrb_first(fnd)->val);
+            strcpy(v[hdl].line[v[hdl].n_line++], jval_s(trv->key));   //copy các tuyến bus có thể đi từ s -> v[hdl]
+        v[hdl].d = jval_d(jrb_first(fnd)->val);                       //lấy giá trị đường đi
     }
-    while ((min = findMin(v, count)) != END)
+    
+    while ((min = findMin(v, count)) != END)         // == while (queue != rỗng); dequeue(queue);
     {
-        v[min].t = 1;
+        v[min].t = 1;                               //đánh dấu đã thăm
         nadj = outdegree(graph, v[min].k, &adj[0][0]);
         for (i = 0; i < nadj; ++i)
         {
@@ -324,57 +220,64 @@ double shortestPath(Graph graph, char *s, char *t, char *path, int *length, Guid
             trv = (JRB)jval_v((jrb_find_str(graph.edges, v[min].k)->val));
             fnd = jrb_find_str(trv, adj[i]);
             fnd = (JRB)jval_v(fnd->val);
-            if (Route(v, min, hdl, fnd, &tmp))
+            if (Route(v, min, fnd, &tmp))                 //kiểm tra xem có thể đi từ v[min]->v[hdl] mà không cần chuyển tuyến không
                 wgt = v[min].d + 1;
             else
-                wgt = v[min].d + 5;
-            if (wgt < v[hdl].d)
+                wgt = v[min].d + 5;                       //nếu phải chuyển tuyến, độ dài đường += 5 (tương đương đi thêm 4 chặng), giá trị 5 là tự đặt
+            if (wgt < v[hdl].d)                           
             {
                 strcpy(tmp.k, v[hdl].k);
-                v[hdl] = tmp;
+                v[hdl] = tmp;                           // cập nhật lại đỉnh nếu tìm được đường đi ngắn hơn
                 strcpy(v[hdl].p, v[min].k);
                 v[hdl].d = wgt;
             }
         }
     }
+    
     i = findVtx(v, count, t);
-    if (v[i].d == INFINITIVE)
+    
+    if (v[i].d == INFINITIVE)                        // nếu không tồn tại đường đi từ <s> tới <t>
         return -1;
+        
     double result = v[i].d;
     *length = 0;
     min = -1;
-    guide[min].end = 0;
+    guide[min].end = 0;                              //end của chuyến bus cuối là <t>, tức path[0]
     parent = i;
+    
+    //tìm ngược lại cách đi từ <s> tới <t>
     while (strcmp(v[i].k, s) != 0)
     {
         hdl = 0;
-        strcpy(line, v[i].line[0]);
-        strcpy(path + (*length) * POS_SIZE, v[i].k);
+        strcpy(line, v[i].line[0]);                    //lấy chuyến bus đầu tiên để đi đến đỉnh đang xét v[i]
+        strcpy(path + (*length) * POS_SIZE, v[i].k);   //cập nhật lộ trình (path lưu hành trình đi từ <s> đến <t>)
         // printf("%s\n", v[i].line);
-        i = findVtx(v, count, v[i].p);
-        for (j = 0; j < v[i].n_line; ++j)
-            if (strcmp(line, v[i].line[j]) == 0)
-                hdl = 1;
+        i = findVtx(v, count, v[i].p);                 //tìm đỉnh cha của v[i]
+        
+        //i lúc này đã lưu chỉ số đỉnh cha, <line> lưu 1 chuyến bus để đi từ v[i] hiện tại (cha) đến v[i] phía trên(con)
+        for (j = 0; j < v[i].n_line; ++j)                 //kiểm tra chuyến bus <line> có dùng để đi đến v[i] hiện tại không
+            if (strcmp(line, v[i].line[j]) == 0)          //nếu có tức không cần chuyển bus, không tức là phải chuyển bus
+                hdl = 1;            
+        
+        //nếu phải chuyển bus
         if (!hdl)
         {
-            guide[++min].begin = *length + 1;
+            guide[++min].begin = *length + 1;           //đặt điểm bắt đầu của tuyến bus trên lộ trình <path>
             for (j = 0; j < v[parent].n_line; ++j)
-                strcpy(guide[min].line[guide[min].n_line++], v[parent].line[j]);
-            guide[min + 1].end = *length + 1;
-            parent = i;
+                strcpy(guide[min].line[guide[min].n_line++], v[parent].line[j]);   //lưu tên các tuyến bus
+            guide[min + 1].end = *length + 1;           //điểm bắt đầu của tuyến bus này là điểm kết thúc của chuyến bus trước đó
+            parent = i;                                 //parent lưu chỉ số điểm cuối của tuyến bus
         }
-        (*length)++;
+        (*length)++;                                    //lưu số điểm đi qua trên toàn lộ trình
     }
 
-    strcpy(path + ((*length)++) * POS_SIZE, s);
-    // guide[++min].begin = *length - 1;
-    // for (j = 0; j < v[guide[min].end].n_line; ++j)
-    //     strcpy(guide[min].line[guide[min].n_line++], v[guide[min].end].line[j]);
-    *changeBus = min;
+    strcpy(path + ((*length)++) * POS_SIZE, s);  //cập nhật điểm đầu hành trình vào lộ trình
+
+    *changeBus = min;                                  //số lần chuyển bus
     return result;
 }
 
-void readFile(Graph graph, char *file)
+void readFile(Graph graph, char *file) //Đọc file
 {
     FILE *fp = fopen(file, "r");
     char read[30], line[10], pos[POS_SIZE] = "", prv[POS_SIZE] = "";
@@ -436,13 +339,7 @@ int main()
     readFile(busgraph, "bus2.txt");
     char output[100][POS_SIZE], from[POS_SIZE], to[POS_SIZE];
     int length, i = 0, j = 0, chageBus = 0;
-    // jrb_insert_str(busgraph.vertices, "Long Bien", new_jval_i(1));
-    // JRB find = jrb_find_str(busgraph.edges, "Diem trung chuyen Long Bien");
-    // JRB tree = (JRB)jval_v(find->val);
-    // find = jrb_find_str(tree, "Yen Phu");
-    // tree = (JRB)jval_v(find->val);
-    // jrb_traverse(ptr, tree)
-    //     printf("%s\n", jval_s(ptr->key));
+
     printf("Ban muon di tu: ");
     gets(from);
     printf("Den: ");
@@ -460,6 +357,7 @@ int main()
             j = 1;
         }
     }
+    
     if (!i || !j)
     {
         printf("Kiem tra lai dia diem\n");
