@@ -110,7 +110,7 @@ double getEdgeValue(Graph graph, char *pos1, char *pos2)
     edge = jrb_find_str(jval_v(find->val), pos2);
     if (edge == NULL)
         return INFINITIVE;
-    return jval_d(edge->val);
+    return 1;
 }
 
 int outdegree(Graph graph, char *v, char *output)
@@ -124,7 +124,6 @@ int outdegree(Graph graph, char *v, char *output)
         JRB tree = (JRB)jval_v(find->val);
         jrb_traverse(ptr, tree)
         {
-            // output[count] = strdup(jval_s(ptr->key));
             strcpy(output + count * POS_SIZE, jval_s(ptr->key));
             count++;
         }
