@@ -124,6 +124,7 @@ int outdegree(Graph graph, char *v, char *output)
         JRB tree = (JRB)jval_v(find->val);
         jrb_traverse(ptr, tree)
         {
+            // output[count] = strdup(jval_s(ptr->key));
             strcpy(output + count * POS_SIZE, jval_s(ptr->key));
             count++;
         }
@@ -272,7 +273,8 @@ double shortestPath(Graph graph, char *s, char *t, char *path, int *length, Guid
 
     strcpy(path + ((*length)++) * POS_SIZE, s);  //cập nhật điểm đầu hành trình vào lộ trình
 
-    *changeBus = min;                                  //số lần chuyển bus
+    *changeBus = min;
+    free(v);                                 //số lần chuyển bus
     return result;
 }
 
